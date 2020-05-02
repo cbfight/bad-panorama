@@ -8,6 +8,37 @@ import statistics
 import numpy as np
 import os
 
+def sector_mask(shape,centre,radius,angle_range):
+    """
+    Return a boolean mask for a circular sector. The start/stop angles in  
+    `angle_range` should be given in clockwise order.
+    https://stackoverflow.com/questions/18352973/mask-a-circular-sector-in-a-numpy-array
+    """
+
+    x,y = np.ogrid[:shape[0],:shape[1]]
+    cx,cy = centre
+    tmin,tmax = np.deg2rad(angle_range)
+
+    # ensure stop angle > start angle
+    if tmax < tmin:
+            tmax += 2*np.pi
+
+    # convert cartesian --> polar coordinates
+    r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
+    theta = np.arctan2(x-cx,y-cy) - tmin
+
+    # wrap angles between 0 and 2*pi
+    theta %= (2*np.pi)
+
+    # circular mask
+    circmask = r2 <= radius*radius
+
+    # angular mask
+    anglemask = theta <= (tmax-tmin)
+
+    return circmask*anglemask
+
+
 
 #get home
 home = os.path.expanduser("~")
@@ -37,6 +68,7 @@ background_average_g = np.average(background[:,:,1])
 background_average_b = np.average(background[:,:,2])
 
 
+
 #show cropped single images and make stitch
 fig, ax = plt.subplots()
 i = 1
@@ -45,6 +77,9 @@ for im in fins:
     image = cv2.imread(im)
     image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
     h, w = image.shape[:2]
+    center = (int((h/2)-0),int(w/2))
+    vig = sector_mask(image.shape,center,1400,(0,360)) #1415 for radius works
+    image[~vig] = 0
     bg_thresh = 0.1
     # Make mask of black pixels - mask is True where image is black
     mBlack = (image[:, :, 0:3] < [background_average_r*bg_thresh,background_average_g*bg_thresh,background_average_b*bg_thresh]).all(2)
