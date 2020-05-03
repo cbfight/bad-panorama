@@ -47,6 +47,7 @@ savepath = os.path.join(home,'Desktop')
 stitcher = cv2.createStitcher(cv2.Stitcher_SCANS)
 
 #file dialogue bg-correction
+
 root = Tk()
 root.filename = filedialog.askopenfilename(initialdir="/",title="select background image")
 root.destroy()
